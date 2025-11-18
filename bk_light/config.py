@@ -90,6 +90,8 @@ class DisplayConfig:
     max_retries: int = 3
     log_notifications: bool = False
     antialias_text: bool = True
+    skip_stage_two_handshake: bool = False
+    log_ack_timings: bool = False
 
 
 @dataclass
@@ -157,6 +159,8 @@ DEFAULTS: Dict[str, Any] = {
         "max_retries": 3,
         "log_notifications": False,
         "antialias_text": True,
+        "skip_stage_two_handshake": False,
+        "log_ack_timings": False,
     },
     "presets": {
         "clock": {
@@ -310,6 +314,8 @@ def _build_panels(data: Dict[str, Any]) -> PanelsConfig:
             grid_x = int(entry.get("grid_x", 0))
             grid_y = int(entry.get("grid_y", 0))
             rotation = entry.get("rotation")
+            if rotation is None and "rotate" in entry:
+                rotation = entry.get("rotate")
             if rotation not in {None, 0, 90, 180, 270}:
                 rotation = None
             brightness = entry.get("brightness")
@@ -452,4 +458,3 @@ def counter_options(config: AppConfig, preset_name: str, overrides: Dict[str, An
         if value is not None and key in data:
             data[key] = value
     return CounterPreset(**data)
-

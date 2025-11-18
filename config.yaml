@@ -1,26 +1,45 @@
 device:
-  address: "F0:27:3C:1A:8B:C3"
+  address: "3677CDED-A2E8-1829-8A02-69433100DA0C"
   auto_reconnect: true
   reconnect_delay: 2.0
   mtu: 2048
-  rotate: 0
-  brightness: 0.15
   timezone: auto
   scan_timeout: 6.0
-
+       
 panels:
   tile_width: 32
   tile_height: 32
   layout:
-    columns: 1
-    rows: 1
-  list: ["F0:27:3C:1A:8B:C3"]
+    columns: 2
+    rows: 2
+  list:
+    - name: top_left
+      address: "3677CDED-A2E8-1829-8A02-69433100DA0C"
+      grid_x: 0
+      grid_y: 0
+      rotation: 180
+    - name: top-right
+      address: "B612AE06-0B30-5961-24AF-70E2A6B6D7AB"
+      grid_x: 1
+      grid_y: 0
+      rotation: 180
+    - name: bottom-left
+      address: "BDC6B470-6315-8225-1CC9-BF8A0F0425F9"
+      grid_x: 0
+      grid_y: 1
+    - name: bottom-right
+      address: "66F8F473-472C-6EE4-4A33-4958E6FF0900"
+      grid_x: 1
+      grid_y: 1
+
 
 display:
   frame_interval: 0.05
   max_retries: 3
-  log_notifications: false
+  log_notifications: true
   antialias_text: false
+  skip_stage_two_handshake: true
+  log_ack_timings: true
 
 runtime:
   mode: clock
@@ -89,5 +108,26 @@ presets:
       start: 0
       count: 10
       delay: 1.0
-
-
+  game:
+    default:
+      fps: 20.0
+      ble_delay: 0.05
+      background: "#050505"
+      player_color: "#00FFAA"
+      trail_color: "#002626"
+      controller: null
+      state: bouncer
+      font: null
+      text_size: 20
+      input_timeout: 0.02
+    counter_demo:
+      fps: 15.0
+      ble_delay: 0.01
+      background: "#010101"
+      player_color: "#F4F7FF"
+      trail_color: null
+      controller: "bk_light.controllers.keyboard:KeyboardController"
+      state: counter
+      font: "Aldo PC"
+      text_size: 24
+      input_timeout: 0.02

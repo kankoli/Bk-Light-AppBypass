@@ -5,7 +5,7 @@ from io import BytesIO
 from typing import Optional
 from bleak import BleakClient, BleakScanner
 from bleak.exc import BleakError
-from PIL import Image, ImageEnhance
+from PIL import Image
 
 DEFAULT_ADDRESS = os.getenv("BK_LIGHT_ADDRESS")
 UUID_WRITE = "0000fa02-0000-1000-8000-00805f9b34fb"
@@ -41,9 +41,6 @@ def adjust_image(png_bytes: bytes, rotation: int, brightness: float) -> bytes:
     image = Image.open(BytesIO(png_bytes)).convert("RGB")
     if rotation:
         image = image.rotate(rotation % 360, expand=False)
-    if brightness != 1.0:
-        enhancer = ImageEnhance.Brightness(image)
-        image = enhancer.enhance(brightness)
     buffer = BytesIO()
     image.save(buffer, format="PNG", optimize=False)
     return buffer.getvalue()
@@ -96,6 +93,8 @@ class BleDisplaySession:
         log_notifications: bool = False,
         max_retries: int = 3,
         scan_timeout: float = 6.0,
+        skip_stage_two_handshake: bool = False,
+        log_ack_timings: bool = False,
     ) -> None:
         resolved = address or DEFAULT_ADDRESS
         if not resolved:
@@ -109,6 +108,8 @@ class BleDisplaySession:
         self.log_notifications = log_notifications
         self.max_retries = max_retries
         self.scan_timeout = scan_timeout
+        self.skip_stage_two_handshake = skip_stage_two_handshake
+        self.log_ack_timings = log_ack_timings
         self.client: Optional[BleakClient] = None
         self.watcher = AckWatcher(log_notifications)
 
@@ -198,23 +199,24 @@ class BleDisplaySession:
                 await self._ensure_connected()
                 self.watcher.reset()
                 await self.client.write_gatt_char(UUID_WRITE, HANDSHAKE_FIRST, response=False)
-                await wait_for_ack(self.watcher.stage_one, "HANDSHAKE_STAGE_ONE", self.log_notifications)
+                await self._await_ack(self.watcher.stage_one, "HANDSHAKE_STAGE_ONE")
                 await asyncio.sleep(delay)
                 self.watcher.stage_two.clear()
-                skip_stage_two = False
-                try:
-                    await self.client.write_gatt_char(UUID_WRITE, HANDSHAKE_SECOND, response=False)
-                    await wait_for_ack(self.watcher.stage_two, "HANDSHAKE_STAGE_TWO", self.log_notifications)
-                except asyncio.TimeoutError:
-                    skip_stage_two = True
-                    if self.log_notifications:
-                        print("HANDSHAKE_STAGE_TWO_SKIPPED")
-                else:
-                    await asyncio.sleep(delay)
+                skip_stage_two = self.skip_stage_two_handshake
+                if not skip_stage_two:
+                    try:
+                        await self.client.write_gatt_char(UUID_WRITE, HANDSHAKE_SECOND, response=False)
+                        await self._await_ack(self.watcher.stage_two, "HANDSHAKE_STAGE_TWO")
+                    except asyncio.TimeoutError:
+                        skip_stage_two = True
+                        if self.log_notifications:
+                            print("HANDSHAKE_STAGE_TWO_SKIPPED")
+                    else:
+                        await asyncio.sleep(delay)
                 if skip_stage_two:
                     await asyncio.sleep(delay)
                 await self.client.write_gatt_char(UUID_WRITE, frame, response=True)
-                await wait_for_ack(self.watcher.stage_three, "FRAME_ACK", self.log_notifications)
+                await self._await_ack(self.watcher.stage_three, "FRAME_ACK")
                 await asyncio.sleep(delay)
                 # await self.client.write_gatt_char(UUID_WRITE, FRAME_VALIDATION, response=False)
                 return
@@ -224,10 +226,26 @@ class BleDisplaySession:
                     raise error
                 await self._safe_disconnect()
                 await asyncio.sleep(self.reconnect_delay)
+                print(f"[BleDisplaySession] frame retry attempt {attempt}")
             except Exception as error:
                 if not self.auto_reconnect or attempt > self.max_retries:
                     await self._safe_disconnect()
                     raise error
                 await self._safe_disconnect()
                 await asyncio.sleep(self.reconnect_delay)
+                print(f"[BleDisplaySession] frame retry attempt {attempt}")
 
+    async def _await_ack(self, event: asyncio.Event, label: str) -> None:
+        if not self.log_ack_timings:
+            await wait_for_ack(event, label, self.log_notifications)
+            return
+        loop = asyncio.get_running_loop()
+        start = loop.time()
+        try:
+            await wait_for_ack(event, label, self.log_notifications)
+            elapsed = (loop.time() - start) * 1000
+            print(f"[{label}] ACK {elapsed:.1f} ms")
+        except asyncio.TimeoutError:
+            elapsed = (loop.time() - start) * 1000
+            print(f"[{label}] TIMEOUT {elapsed:.1f} ms")
+            raise

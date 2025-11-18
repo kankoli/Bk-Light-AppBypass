@@ -186,7 +186,16 @@ The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Updat
   python scripts/list_fonts.py [--config config.yaml]
   ```
 
+- `scripts/game_runtime.py` – sample controller/game harness with a bouncing-square demo plus a keyboard-driven counter preset (`game.counter_demo`).
+- `scripts/game_demo.py` – runs the bouncing-ball showcase built with the higher-level `game_engine` helpers.
+- `scripts/game_space_invaders.py` – launches a minimalist Space Invaders clone using the sprite/bullet system.
+
 Each script honours `--config`, `--address`, and preset overrides so you can reuse the same YAML in development or production.
+
+## Game Engine Demos
+
+- `python scripts/game_demo.py` – bouncing ball demo that shows the dirty-rectangle renderer.
+- `python scripts/game_space_invaders.py` – pared-down Space Invaders clone (move with ←/→, fire with space) built on the same primitives.
 
 ## Building New Effects
 

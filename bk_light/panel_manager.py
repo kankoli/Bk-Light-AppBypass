@@ -57,6 +57,8 @@ class PanelManager:
             log_notifications=self.config.display.log_notifications,
             max_retries=self.config.display.max_retries,
             scan_timeout=self.config.device.scan_timeout,
+            skip_stage_two_handshake=self.config.display.skip_stage_two_handshake,
+            log_ack_timings=self.config.display.log_ack_timings,
         )
         await session.__aenter__()
         self.sessions.append(PanelSession(None, session))
@@ -76,6 +78,8 @@ class PanelManager:
                 log_notifications=self.config.display.log_notifications,
                 max_retries=self.config.display.max_retries,
                 scan_timeout=self.config.device.scan_timeout,
+                skip_stage_two_handshake=self.config.display.skip_stage_two_handshake,
+                log_ack_timings=self.config.display.log_ack_timings,
             )
             tasks.append(self._connect_panel(descriptor, session))
         await asyncio.gather(*tasks)
@@ -110,4 +114,3 @@ class PanelManager:
             region.save(buffer, format="PNG", optimize=False)
             tasks.append(panel_session.session.send_png(buffer.getvalue(), delay))
         await asyncio.gather(*tasks)
-
