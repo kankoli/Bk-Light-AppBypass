@@ -10,36 +10,63 @@ panels:
   tile_width: 32
   tile_height: 32
   layout:
-    columns: 2
-    rows: 2
+    columns: 3
+    rows: 3
   list:
-    - name: top_left
+    - name: 1
+      address: "5916F798-AA78-62A4-4F49-5859F2CBE892"
+      grid_x: 0
+      grid_y: 0
+      rotation: 90
+    - name: 2
+      address: "020F9389-C16F-EDBA-F0D1-35332E17160F"
+      grid_x: 1
+      grid_y: 0
+      rotation: 180
+    - name: 3
+      address: "BDC6B470-6315-8225-1CC9-BF8A0F0425F9"
+      grid_x: 2
+      grid_y: 0
+      rotation: 270
+    - name: 4
       address: "3677CDED-A2E8-1829-8A02-69433100DA0C"
       grid_x: 0
-      grid_y: 0
-      rotation: 180
-    - name: top-right
+      grid_y: 1
+      rotation: 90
+    - name: 5
       address: "B612AE06-0B30-5961-24AF-70E2A6B6D7AB"
       grid_x: 1
-      grid_y: 0
-      rotation: 180
-    - name: bottom-left
-      address: "BDC6B470-6315-8225-1CC9-BF8A0F0425F9"
+      grid_y: 1
+      rotate: 270
+    - name: 6
+      address: "35BE0FB2-CA4E-2DCE-155D-9F154499B898"
+      grid_x: 2
+      grid_y: 1
+      rotation: 270
+    - name: 7
+      address: "20AFD940-8858-2C02-D9E8-3929001BA08A"
       grid_x: 0
-      grid_y: 1
-    - name: bottom-right
-      address: "66F8F473-472C-6EE4-4A33-4958E6FF0900"
+      grid_y: 2
+      rotation: 90
+    - name: 8
+      address: "A43A6C08-FE7F-C265-1F99-37331B8DA7F5"
       grid_x: 1
-      grid_y: 1
+      grid_y: 2
+      rotation: 0
+    - name: 9
+      address: "304E3725-7C71-5145-B5CF-CED5ADC6E565"
+      grid_x: 2
+      grid_y: 2
+      rotation: 270
 
 
 display:
   frame_interval: 0.05
   max_retries: 3
-  log_notifications: true
+  log_notifications: false
   antialias_text: false
   skip_stage_two_handshake: true
-  log_ack_timings: true
+  log_ack_timings: false
 
 runtime:
   mode: clock
