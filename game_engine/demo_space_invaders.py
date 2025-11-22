@@ -15,25 +15,28 @@ class Bullet(Sprite):
 
 
 class SpaceInvadersDemo(KeyboardGame):
-    def __init__(self, config_path=None, fps: float = 15.0) -> None:
+    def __init__(self, config_path=None, fps: float = 10.0) -> None:
         super().__init__(config_path=config_path, fps=fps)
         width, height = self.surface.canvas_size
         scale = min(width, height) / 32.0
         self.background_color = (2, 2, 8)
         self.collision = CollisionSystem((width, height))
-        player_width = max(5, int(5 * scale))
-        player_height = max(2, int(2 * scale))
+        spaceship_frames = self._spaceship_frames()
         self.player = Sprite(
-            pixel_map=rectangle_pixels(player_width, player_height, (180, 220, 255)),
-            position=(width / 2 - player_width / 2, height - (player_height + 2)),
+            pixel_map=spaceship_frames[0],
+            position=(width / 2 - 4, height - (8 + 2)),
         )
+        self.player.set_frames(spaceship_frames, animation_speed=8, loop=True)
         self.player_speed = 60.0 * scale
+        self._held_dir = 0
+        self._hold_timer = 0.0
+        self._hold_duration = 0.75
         self.bullets: List[Bullet] = []
         self.aliens: List[Sprite] = []
         self.alien_direction = 1
         self.alien_speed = 12.0
         self.alien_drop = 3.0
-        self.max_bullets = 3
+        self.max_bullets = 8
         self.spawn_wave()
         self.sprites.extend([self.player, *self.aliens])
 
@@ -43,37 +46,14 @@ class SpaceInvadersDemo(KeyboardGame):
     def spawn_wave(self) -> None:
         self.aliens.clear()
         width, _ = self.surface.canvas_size
-        columns = max(4, width // 8)
+        templates = self._alien_templates()
+        alien_width = len(templates[0][0][0])
+        alien_height = len(templates[0][0])
+        columns = max(4, width // (alien_width + 3))
         rows = 3
-        spacing_x = max(4, width // (columns + 2))
-        spacing_y = 4
+        spacing_x = max(alien_width + 2, width // (columns + 2))
+        spacing_y = alien_height + 2
         colors = [(60, 220, 140), (240, 190, 90), (220, 80, 200)]
-        templates = [
-            (
-                [
-                    [0, 1, 0, 1, 0],
-                    [1, 1, 1, 1, 1],
-                    [0, 1, 1, 1, 0],
-                ],
-                [
-                    [0, 1, 0, 1, 0],
-                    [1, 0, 1, 0, 1],
-                    [0, 1, 1, 1, 0],
-                ],
-            ),
-            (
-                [
-                    [1, 0, 1, 0, 1],
-                    [1, 1, 1, 1, 1],
-                    [0, 1, 0, 1, 0],
-                ],
-                [
-                    [0, 1, 0, 1, 0],
-                    [1, 1, 1, 1, 1],
-                    [1, 0, 1, 0, 1],
-                ],
-            ),
-        ]
         for row in range(rows):
             for col in range(columns):
                 x = 2 + col * spacing_x
@@ -93,6 +73,91 @@ class SpaceInvadersDemo(KeyboardGame):
                 alien.set_frames(frame_pixels, animation_speed=4, loop=True)
                 self.aliens.append(alien)
 
+    def _alien_templates(self) -> List[tuple[List[List[int]], List[List[int]]]]:
+        return [
+            (
+                [
+                    [0, 0, 1, 1, 0, 0],
+                    [0, 1, 1, 1, 1, 0],
+                    [1, 1, 1, 1, 1, 1],
+                    [1, 0, 1, 1, 0, 1],
+                    [1, 1, 0, 0, 1, 1],
+                    [0, 1, 0, 0, 1, 0],
+                ],
+                [
+                    [0, 0, 1, 1, 0, 0],
+                    [1, 1, 1, 1, 1, 1],
+                    [0, 1, 1, 1, 1, 0],
+                    [1, 0, 1, 1, 0, 1],
+                    [0, 1, 0, 0, 1, 0],
+                    [1, 0, 1, 1, 0, 1],
+                ],
+            ),
+            (
+                [
+                    [0, 1, 0, 0, 1, 0],
+                    [1, 1, 1, 1, 1, 1],
+                    [1, 0, 1, 1, 1, 0],
+                    [1, 1, 1, 1, 1, 1],
+                    [0, 1, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 1, 0],
+                ],
+                [
+                    [0, 1, 0, 0, 1, 0],
+                    [1, 1, 1, 1, 1, 1],
+                    [0, 1, 1, 1, 1, 0],
+                    [1, 0, 1, 1, 0, 1],
+                    [1, 1, 0, 0, 1, 1],
+                    [0, 1, 0, 0, 1, 0],
+                ],
+            ),
+        ]
+
+    def _spaceship_frames(self) -> List[List[List[tuple[int, int, int] | None]]]:
+        hull = (180, 220, 255)
+        accent = (120, 255, 215)
+        thruster_a = (255, 180, 90)
+        thruster_b = (255, 220, 140)
+        frames = [
+            [
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 1, 3, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [1, 0, 1, 1, 1, 1, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 3, 3, 1, 1, 0],
+                [0, 1, 1, 2, 2, 1, 1, 0],
+                [0, 0, 2, 0, 0, 2, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 1, 3, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [1, 0, 1, 1, 1, 1, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 1, 1, 3, 3, 1, 1, 0],
+                [0, 1, 1, 2, 2, 1, 1, 0],
+                [0, 0, 2, 2, 2, 2, 0, 0],
+            ],
+        ]
+
+        def build(frame: List[List[int]], thruster_color: tuple[int, int, int]) -> List[List[tuple[int, int, int] | None]]:
+            return [
+                [
+                    hull
+                    if cell == 1
+                    else accent
+                    if cell == 3
+                    else thruster_color
+                    if cell == 2
+                    else None
+                    for cell in row
+                ]
+                for row in frame
+            ]
+
+        return [build(frames[0], thruster_a), build(frames[1], thruster_b)]
+
     def fire_bullet(self) -> None:
         if len(self.bullets) >= self.max_bullets:
             return
@@ -105,16 +170,34 @@ class SpaceInvadersDemo(KeyboardGame):
         self.sprites.append(bullet)
 
     async def handle_inputs(self, inputs: Sequence[InputState], delta: float) -> None:
-        move = 0.0
+        dx_steps = 0
+        shots = 0
         for state in inputs:
-            if state.left:
-                move -= 1.0
-            if state.right:
-                move += 1.0
-            if state.action_a:
+            left_steps = getattr(state, "left_count", 0) or (1 if state.left else 0)
+            right_steps = getattr(state, "right_count", 0) or (1 if state.right else 0)
+            step_delta = right_steps - left_steps
+            if step_delta:
+                dx_steps += step_delta
+                self._held_dir = 1 if step_delta > 0 else -1
+                self._hold_timer = self._hold_duration
+            shots += getattr(state, "action_a_count", 0) or (1 if state.action_a else 0)
+        if shots:
+            for _ in range(shots):
                 self.fire_bullet()
-        vx = move * self.player_speed
-        self.player.velocity = (vx, 0.0)
+        if dx_steps == 0:
+            if shots:
+                # keep current direction alive while firing
+                pass
+            else:
+                self._hold_timer = max(0.0, self._hold_timer - delta)
+            if self._held_dir != 0 and self._hold_timer > 0.0:
+                dx_steps += self._held_dir
+
+        dx = dx_steps * 2.0
+        if dx != 0.0:
+            px, py = self.player.position
+            self.player.position = (px + dx, py)
+        self.player.velocity = (0.0, 0.0)
 
     async def update(self, delta: float) -> None:
         await super().update(delta)
@@ -125,6 +208,23 @@ class SpaceInvadersDemo(KeyboardGame):
         if not self.aliens:
             self.spawn_wave()
             self.sprites.extend(self.aliens)
+
+    @staticmethod
+    def _swept_bounds(sprite: Sprite) -> tuple[float, float, float, float]:
+        """Expand bounds to cover motion between frames to avoid tunneling at low FPS."""
+        x0, y0, w0, h0 = sprite.bounds
+        x1, y1, w1, h1 = sprite.previous_bounds
+        left = min(x0, x1)
+        top = min(y0, y1)
+        right = max(x0 + w0, x1 + w1)
+        bottom = max(y0 + h0, y1 + h1)
+        return (left, top, right - left, bottom - top)
+
+    @staticmethod
+    def _overlaps_swept(a: Sprite, b: Sprite) -> bool:
+        ax, ay, aw, ah = SpaceInvadersDemo._swept_bounds(a)
+        bx, by, bw, bh = SpaceInvadersDemo._swept_bounds(b)
+        return ax < bx + bw and ax + aw > bx and ay < by + bh and ay + ah > by
 
     def _update_player_bounds(self) -> None:
         x, y, width, _ = self.player.bounds
@@ -167,7 +267,7 @@ class SpaceInvadersDemo(KeyboardGame):
         for alien in self.aliens:
             hit = False
             for bullet in list(self.bullets):
-                if self.collision.overlaps(alien, bullet):
+                if self._overlaps_swept(alien, bullet):
                     hit = True
                     if bullet in self.sprites:
                         self.sprites.remove(bullet)

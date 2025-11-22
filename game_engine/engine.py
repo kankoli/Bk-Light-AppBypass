@@ -20,6 +20,7 @@ class GameEngine:
         self.loop = GameLoop(self.surface, self.sprites, self.controllers, fps=fps)
         self.running = True
         self.background_color = (0, 0, 0)
+        self._last_drawn: List[tuple[float, float, float, float]] = []
 
     async def setup(self) -> None:
         pass
@@ -32,9 +33,20 @@ class GameEngine:
             sprite.update(delta)
 
     async def render(self) -> None:
-        self.surface.clear(self.background_color)
+        if self._last_drawn:
+            for bbox in self._last_drawn:
+                self.surface.fill_rect(
+                    (
+                        int(bbox[0]),
+                        int(bbox[1]),
+                        int(bbox[0] + bbox[2]),
+                        int(bbox[1] + bbox[3]),
+                    ),
+                    self.background_color,
+                )
         for sprite in self.sprites:
             sprite.draw(self.surface)
+        self._last_drawn = [sprite.bounds for sprite in self.sprites]
 
     async def _step(self, inputs: Sequence[InputState], delta: float) -> None:
         await self.handle_inputs(inputs, delta)

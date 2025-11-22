@@ -64,8 +64,21 @@ class SnakeGame(KeyboardGame):
                 break
         x = cell[0] * self.cell_size
         y = cell[1] * self.cell_size
+        fruit_pixels = random.choice(self._fruit_shapes())
+        fruit_w = len(fruit_pixels[0]) if fruit_pixels else 1
+        fruit_h = len(fruit_pixels) if fruit_pixels else 1
+        margin_x = max(0, fruit_w // 2)
+        margin_y = max(0, fruit_h // 2)
+        grid_max_x = max(0, (width - margin_x) // self.cell_size - 1)
+        grid_max_y = max(0, (height - margin_y) // self.cell_size - 1)
+        while x < margin_x or y < margin_y or x + fruit_w > width - margin_x or y + fruit_h > height - margin_y:
+            cell = (random.randint(0, grid_max_x), random.randint(0, grid_max_y))
+            if cell in occupied:
+                continue
+            x = cell[0] * self.cell_size
+            y = cell[1] * self.cell_size
         food = Food(
-            pixel_map=random.choice(self._fruit_shapes()),
+            pixel_map=fruit_pixels,
             position=(x, y),
         )
         self.food = food
@@ -88,7 +101,7 @@ class SnakeGame(KeyboardGame):
         self.direction = self.pending_direction
         dx, dy = self.direction
         head = self.snake[0]
-        step = self.cell_size / 2
+        step = self.cell_size / 3
         new_x = head.position[0] + dx * step
         new_y = head.position[1] + dy * step
         width, height = self.surface.canvas_size
@@ -175,7 +188,7 @@ class SnakeGame(KeyboardGame):
         banana = shape([
             "   s   ",
             "  Y     ",
-            "  Y     ",
+            " YY     ",
             " YY     ",
             "YYY     ",
             "YYYY    ",
@@ -185,7 +198,7 @@ class SnakeGame(KeyboardGame):
         pineapple = shape([
             "ggG Ggg",
             "  GGG  ",
-            "ys G sy",
+            " s G s ",
             "sYs sYs",
             "ysYsYsy",
             "sYsYsYs",

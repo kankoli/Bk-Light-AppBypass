@@ -41,9 +41,9 @@ class GameLoop:
             await self.surface.refresh(delay=0.005)
             refresh_elapsed = (time.perf_counter() - refresh_start) * 1000
             elapsed = time.perf_counter() - loop_start
-            print(
-                f"[GameLoop] inputs={inputs_elapsed:.1f}ms update={step_elapsed:.1f}ms refresh={refresh_elapsed:.1f}ms total={elapsed*1000:.1f}ms"
-            )
+            # print(
+            #     f"[GameLoop] inputs={inputs_elapsed:.1f}ms update={step_elapsed:.1f}ms refresh={refresh_elapsed:.1f}ms total={elapsed*1000:.1f}ms"
+            # )
             await asyncio.sleep(max(0.0, frame_time - elapsed))
 
     def stop(self) -> None:

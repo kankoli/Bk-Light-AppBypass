@@ -28,6 +28,12 @@ class InputState:
     right: bool = False
     action_a: bool = False
     action_b: bool = False
+    up_count: int = 0
+    down_count: int = 0
+    left_count: int = 0
+    right_count: int = 0
+    action_a_count: int = 0
+    action_b_count: int = 0
 
 
 class Controller:
@@ -55,14 +61,33 @@ class Controller:
         if termios is not None and self._saved_mode is not None:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, self._saved_mode)
 
+    @staticmethod
+    def _merge_states(current: InputState, incoming: InputState) -> InputState:
+        return InputState(
+            up=current.up or incoming.up,
+            down=current.down or incoming.down,
+            left=current.left or incoming.left,
+            right=current.right or incoming.right,
+            action_a=current.action_a or incoming.action_a,
+            action_b=current.action_b or incoming.action_b,
+            up_count=current.up_count + incoming.up_count,
+            down_count=current.down_count + incoming.down_count,
+            left_count=current.left_count + incoming.left_count,
+            right_count=current.right_count + incoming.right_count,
+            action_a_count=current.action_a_count + incoming.action_a_count,
+            action_b_count=current.action_b_count + incoming.action_b_count,
+        )
+
     async def poll(self) -> InputState:
+        combined = InputState()
         while not self._stop.is_set():
             try:
-                return self._queue.get_nowait()
+                state = self._queue.get_nowait()
+                combined = self._merge_states(combined, state)
+                continue
             except queue.Empty:
-                await asyncio.sleep(self._poll_interval)
                 break
-        return InputState()
+        return combined
 
     def drain(self) -> list[InputState]:
         drained: list[InputState] = []
@@ -132,7 +157,10 @@ class Controller:
         return {}
 
     def emit_state(self, **kwargs: bool) -> None:
-        self._queue.put(InputState(**{key: value for key, value in kwargs.items() if value}))
+        payload = {key: value for key, value in kwargs.items() if value}
+        for key in list(payload.keys()):
+            payload[f"{key}_count"] = payload.get(f"{key}_count", 0) + 1
+        self._queue.put(InputState(**payload))
 
 
 class KeyboardController(Controller):

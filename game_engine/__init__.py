@@ -10,6 +10,7 @@ from .demo import BouncingBallDemo
 from .demo_space_invaders import SpaceInvadersDemo
 from .demo_snake import SnakeGame
 from .demo_tank import TankBattle
+from .demo_breakout import BreakoutGame
 
 __all__ = [
     "DisplaySurface",
@@ -26,4 +27,5 @@ __all__ = [
     "SpaceInvadersDemo",
     "SnakeGame",
     "TankBattle",
+    "BreakoutGame",
 ]
